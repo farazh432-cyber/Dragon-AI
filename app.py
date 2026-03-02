@@ -12,53 +12,72 @@ except Exception:
 client = Groq(api_key=GROQ_API_KEY)
 st.set_page_config(page_title="Dragon AI Pro", page_icon="🐉", layout="wide")
 
-# --- 2. ADVANCED THEME & ANIMATIONS ---
+# --- 2. THE DRAGON COLOR PALETTE ---
 st.markdown("""
     <style>
     .stApp { background: #050505; }
     
-    /* Animation for the chat input and sub-menus */
-    @keyframes popUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+    /* Global Text */
+    .stMarkdown, p, span, label, div { color: #ffffff !important; }
+
+    /* 🟢 GREEN BUTTON: New Chat */
+    div[data-testid="stSidebar"] .stButton>button {
+        background: linear-gradient(135deg, #00b300, #004d00) !important;
+        color: white !important;
+        border: none !important;
+        font-weight: bold !important;
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        border-radius: 10px !important;
     }
 
-    /* Styling the Chat Input and + Button area */
-    .stChatInputContainer {
-        animation: popUp 0.5s ease-out;
-        padding-bottom: 40px !important; /* Space for the footer */
+    /* 📜 DARK RED HOVER: History Buttons */
+    div[data-testid="stSidebarNav"] + div .stButton>button, 
+    div[data-testid="stSidebar"] .stButton + div .stButton>button {
+        background: rgba(30, 30, 30, 0.6) !important;
+        border: 1px solid rgba(255, 75, 75, 0.2) !important;
+        transition: 0.3s;
+    }
+    div[data-testid="stSidebar"] .stButton + div .stButton>button:hover {
+        border-color: #ff4b2b !important;
+        box-shadow: 0 0 10px rgba(255, 75, 75, 0.4);
+        background: rgba(255, 75, 75, 0.1) !important;
     }
 
-    /* Powered by Classical_Ladder Text */
-    .footer-text {
+    /* 🟡 GOLD BUTTON: The + Popover */
+    .stPopover button {
+        background: linear-gradient(135deg, #ffd700, #b8860b) !important;
+        color: #000000 !important;
+        font-weight: bold !important;
+        border-radius: 50% !important;
+        border: 2px solid #ffffff !important;
+        width: 50px !important;
+        height: 50px !important;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+
+    /* 🔴 RED ACCENT: Chat Input */
+    .stChatInput button {
+        background-color: #ff4b2b !important;
+        color: white !important;
+    }
+
+    /* Credit Text Styling */
+    .top-credit {
         text-align: center;
-        color: rgba(255, 255, 255, 0.4);
+        color: #ffcc33;
         font-size: 12px;
-        font-family: 'Courier New', Courier, monospace;
-        letter-spacing: 2px;
-        margin-top: 5px;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        margin-bottom: -10px;
+        font-weight: bold;
     }
 
-    /* Chat Bubbles Slide-in */
-    @keyframes slideIn { 
-        from { opacity: 0; transform: translateX(-20px); } 
-        to { opacity: 1; transform: translateX(0); } 
-    }
-    .stChatMessage {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 75, 75, 0.3) !important;
-        border-radius: 20px !important;
-        backdrop-filter: blur(10px);
-        animation: slideIn 0.5s ease-out;
-    }
-
-    /* Header Gradient */
     .dragon-header {
         background: linear-gradient(90deg, #ff4b2b, #ffcc33);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-weight: 800; font-size: 50px; text-align: center;
-        filter: drop-shadow(0 0 10px rgba(255, 75, 75, 0.5));
+        font-weight: 800; font-size: 55px; text-align: center;
+        filter: drop-shadow(0 0 10px rgba(255, 75, 75, 0.4));
     }
     </style>
     """, unsafe_allow_html=True)
@@ -77,56 +96,55 @@ with st.sidebar:
         st.rerun()
     st.divider()
     for cid in list(st.session_state.chats.keys()):
-        chat_msgs = st.session_state.chats[cid]
-        title = chat_msgs[1]["content"][:20] if len(chat_msgs) > 1 else "New Scroll"
+        msgs = st.session_state.chats[cid]
+        # Title is first user message or 'New Scroll'
+        title = msgs[1]["content"][:20] if len(msgs) > 1 else "New Scroll"
         if st.button(f"🐉 {title}...", key=cid, use_container_width=True):
             st.session_state.current_chat_id = cid
             st.rerun()
 
 # --- 5. MAIN INTERFACE ---
+st.markdown("<p class='top-credit'>Powered by Classical_Ladder</p>", unsafe_allow_html=True)
 st.markdown("<h1 class='dragon-header'>DRAGON AI</h1>", unsafe_allow_html=True)
 
 if st.session_state.current_chat_id not in st.session_state.chats:
     st.session_state.chats[st.session_state.current_chat_id] = [
-        {"role": "system", "content": "You are a wise legendary dragon. Speak with fire metaphors."}
+        {"role": "system", "content": "You are a wise legendary dragon."}
     ]
 
 messages = st.session_state.chats[st.session_state.current_chat_id]
 
-# Display history
 for msg in messages:
     if msg["role"] != "system":
         with st.chat_message(msg["role"], avatar="🐉" if msg["role"] == "assistant" else "👤"):
             st.markdown(msg["content"])
 
-# --- 6. THE "+" INPUT & FOOTER ---
-# Using Streamlit's bottom container for the "Powered by" label
-with st._bottom:
-    st.markdown("<p class='footer-text'>Powered by Classical_Ladder</p>", unsafe_allow_html=True)
+# --- 6. THE "+" MENU & INPUT ---
+with st.container():
+    c1, c2 = st.columns([0.15, 0.85])
+    with c1:
+        # The Custom Popover for Image/File
+        with st.popover("➕"):
+            st.write("### Add Offering")
+            img_file = st.file_uploader("🖼️ Add Image", type=["png", "jpg", "jpeg"])
+            doc_file = st.file_uploader("📁 Add Files", type=["pdf", "txt"])
+            if img_file or doc_file:
+                st.success("Ready to send!")
+    with c2:
+        prompt = st.chat_input("Speak to the Dragon...")
 
-# The chat input with multi-file support (This adds the + icon)
-prompt_data = st.chat_input(
-    "Ask your dragon or share an image/file...",
-    accept_file="multiple",
-    file_type=["png", "jpg", "jpeg", "pdf", "txt", "docx"]
-)
+# --- 7. CHAT LOGIC ---
+if prompt:
+    user_msg = prompt
+    # Visual markers for attachments
+    if img_file: user_msg += f"\n\n[Image Attached: {img_file.name}]"
+    if doc_file: user_msg += f"\n\n[File Attached: {doc_file.name}]"
 
-if prompt_data:
-    user_text = prompt_data.text
-    # Handling visual feedback for files
-    if prompt_data.files:
-        file_names = [f.name for f in prompt_data.files]
-        user_text += f"\n\n*Uploaded Offering: {', '.join(file_names)}*"
-
-    messages.append({"role": "user", "content": user_text})
+    messages.append({"role": "user", "content": user_msg})
     with st.chat_message("user", avatar="👤"):
-        st.markdown(user_text)
-        # Display images directly in the chat if uploaded
-        for f in prompt_data.files:
-            if f.type.startswith("image/"):
-                st.image(f, width=300)
+        st.markdown(user_msg)
+        if img_file: st.image(img_file, width=250)
 
-    # Dragon Response
     with st.chat_message("assistant", avatar="🐉"):
         resp_area = st.empty()
         full_resp = ""
