@@ -12,7 +12,7 @@ except Exception:
 client = Groq(api_key=GROQ_API_KEY)
 st.set_page_config(page_title="Dragon AI Pro", page_icon="🐉", layout="wide")
 
-# --- 2. THE DRAGON COLOR PALETTE ---
+# --- 2. THE DRAGON COLOR PALETTE & MOBILE FIXES ---
 st.markdown("""
     <style>
     .stApp { background: #050505; }
@@ -30,17 +30,24 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
-    /* 📜 DARK RED HOVER: History Buttons */
+    /* 📜 HISTORY BUTTONS (Desktop) */
     div[data-testid="stSidebarNav"] + div .stButton>button, 
     div[data-testid="stSidebar"] .stButton + div .stButton>button {
         background: rgba(30, 30, 30, 0.6) !important;
         border: 1px solid rgba(255, 75, 75, 0.2) !important;
         transition: 0.3s;
+        color: white !important;
     }
-    div[data-testid="stSidebar"] .stButton + div .stButton>button:hover {
-        border-color: #ff4b2b !important;
-        box-shadow: 0 0 10px rgba(255, 75, 75, 0.4);
-        background: rgba(255, 75, 75, 0.1) !important;
+
+    /* 📱 MOBILE ONLY FIX: Make Sidebar Text/Icons Black */
+    @media (max-width: 768px) {
+        [data-testid="stSidebar"] .stButton>button {
+            color: #000000 !important; /* Force black text for mobile */
+            font-weight: 800 !important;
+        }
+        [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
+            color: #000000 !important; /* Force black title text for mobile */
+        }
     }
 
     /* 🟡 GOLD BUTTON: The + Popover */
@@ -61,7 +68,6 @@ st.markdown("""
         color: white !important;
     }
 
-    /* Credit Text Styling */
     .top-credit {
         text-align: center;
         color: #ffcc33;
@@ -97,7 +103,6 @@ with st.sidebar:
     st.divider()
     for cid in list(st.session_state.chats.keys()):
         msgs = st.session_state.chats[cid]
-        # Title is first user message or 'New Scroll'
         title = msgs[1]["content"][:20] if len(msgs) > 1 else "New Scroll"
         if st.button(f"🐉 {title}...", key=cid, use_container_width=True):
             st.session_state.current_chat_id = cid
@@ -123,20 +128,16 @@ for msg in messages:
 with st.container():
     c1, c2 = st.columns([0.15, 0.85])
     with c1:
-        # The Custom Popover for Image/File
         with st.popover("➕"):
             st.write("### Add Offering")
             img_file = st.file_uploader("🖼️ Add Image", type=["png", "jpg", "jpeg"])
             doc_file = st.file_uploader("📁 Add Files", type=["pdf", "txt"])
-            if img_file or doc_file:
-                st.success("Ready to send!")
     with c2:
         prompt = st.chat_input("Speak to the Dragon...")
 
 # --- 7. CHAT LOGIC ---
 if prompt:
     user_msg = prompt
-    # Visual markers for attachments
     if img_file: user_msg += f"\n\n[Image Attached: {img_file.name}]"
     if doc_file: user_msg += f"\n\n[File Attached: {doc_file.name}]"
 
