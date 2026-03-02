@@ -3,7 +3,6 @@ from groq import Groq
 import os
 
 # --- 1. CONFIGURATION & SECURITY ---
-# This pulls the key from Streamlit's hidden "Secrets" vault for safety.
 try:
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 except Exception:
@@ -17,7 +16,7 @@ st.set_page_config(page_title="Dragon AI", page_icon="🐉", layout="wide")
 # --- 2. DRAGON THEME (Optimized for Mobile Visibility) ---
 st.markdown("""
     <style>
-    /* Force main app background and base text color */
+    /* Force main app background */
     .stApp { 
         background-color: #050505 !important; 
     }
@@ -50,20 +49,14 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: 800; 
-        font-size: clamp(30px, 8vw, 60px); /* Responsive size for mobile */
+        font-size: clamp(35px, 10vw, 70px); 
         text-align: center;
         filter: drop-shadow(0 0 12px rgba(255, 75, 75, 0.6));
-        margin-bottom: 5px;
-    }
-    
-    .dragon-subtitle {
-        text-align: center; 
-        opacity: 0.8; 
-        font-style: italic;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
+        margin-top: 20px;
     }
 
-    /* Input box styling to make it visible */
+    /* Input box styling */
     .stChatInputContainer {
         padding-bottom: 20px !important;
     }
@@ -72,7 +65,6 @@ st.markdown("""
 
 # --- 3. THE INTERFACE ---
 st.markdown("<h1 class='dragon-header'>DRAGON AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='dragon-subtitle'>Ancient Wisdom • Powered by Groq</p>", unsafe_allow_html=True)
 
 # Initialize session state for messages
 if "messages" not in st.session_state:
@@ -88,19 +80,16 @@ for message in st.session_state.messages:
 
 # --- 4. CHAT LOGIC ---
 if prompt := st.chat_input("Speak to the Dragon..."):
-    # Add user message to history
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
 
-    # Generate Assistant response
     with st.chat_message("assistant", avatar="🐉"):
         response_placeholder = st.empty()
         full_response = ""
         
         try:
-            # Using Llama 3.3-70b via Groq
             completion = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=st.session_state.messages,
@@ -110,14 +99,11 @@ if prompt := st.chat_input("Speak to the Dragon..."):
             for chunk in completion:
                 if chunk.choices[0].delta.content:
                     full_response += chunk.choices[0].delta.content
-                    # Added a "cursor" effect while typing
                     response_placeholder.markdown(full_response + " ☄️")
             
-            # Final output without the cursor
             response_placeholder.markdown(full_response)
             
         except Exception as e:
             st.error(f"The dragon is resting: {e}")
     
-    # Save the full response to history
     st.session_state.messages.append({"role": "assistant", "content": full_response})
