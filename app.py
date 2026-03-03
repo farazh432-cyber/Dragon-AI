@@ -11,7 +11,7 @@ except Exception as e:
 
 st.set_page_config(page_title="Dragon AI Pro", page_icon="🐉", layout="wide")
 
-# --- 2. THE ULTIMATE DRAGON THEME ---
+# --- 2. THE DRAGON THEME (Visuals) ---
 st.markdown("""
     <style>
     .stApp { background-color: #050505; }
@@ -26,14 +26,8 @@ st.markdown("""
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         font-weight: 900; font-size: 65px; text-align: center;
         filter: drop-shadow(0 0 15px rgba(255, 69, 0, 0.8));
-        margin-bottom: 0px;
     }
     
-    .top-credit {
-        text-align: center; color: #ffcc33; font-size: 14px;
-        letter-spacing: 6px; text-transform: uppercase; font-weight: bold;
-    }
-
     .stChatMessage {
         border: 1px solid #330000 !important;
         border-radius: 15px !important;
@@ -98,7 +92,7 @@ st.markdown("<p class='top-credit'>Powered by Classical_Ladder</p>", unsafe_allo
 st.markdown("<h1 class='dragon-header'>DRAGON AI</h1>", unsafe_allow_html=True)
 
 if not st.session_state.current_scroll_id or st.session_state.current_scroll_id not in st.session_state.all_scrolls:
-    st.info("Click 'Forge New Scroll' to start.")
+    st.info("The Dragon is ready. Click 'Forge New Scroll' to start.")
     st.stop()
 
 current_msgs = st.session_state.all_scrolls[st.session_state.current_scroll_id]
@@ -116,9 +110,9 @@ with col_btn:
         st.file_uploader("doc", type=['pdf','txt','csv'], key="doc_up", label_visibility="collapsed")
 
 with col_txt:
-    prompt = st.chat_input("Whisper to the beast...")
+    prompt = st.chat_input("What's on your mind, bro?")
 
-# --- 7. "REAL TALK" PROCESSING ---
+# --- 7. GEMINI-STYLE PROCESSING ---
 if prompt:
     current_msgs.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar="👤"):
@@ -128,9 +122,14 @@ if prompt:
         resp_area = st.empty()
         full_resp = ""
         
-        # CHANGED: System prompt is now more grounded and helpful
+        # GEMINI-INSPIRED SYSTEM PROMPT
         context = [
-            {"role": "system", "content": "You are a helpful, grounded AI with a touch of wit, named Dragon AI. You balance being supportive with being direct. If the user says 'Hi', just be a normal peer and say hello back. No nonsense, no over-the-top roleplay unless specifically asked."}
+            {"role": "system", "content": """You are Dragon AI, an authentic, adaptive AI collaborator with a touch of wit. 
+            Your goal is to address the user's true intent with insightful, clear, and concise responses. 
+            Balance empathy with candor: be supportive and grounded. 
+            Subtly adapt your tone and humor to the user's style. 
+            If they use slang like 'wsp', 'wassup', or 'bro', respond naturally like a cool peer. 
+            Don't be a rigid lecturer and don't give nonsense 'I don't understand' replies to simple slang."""}
         ] + current_msgs
         
         try:
