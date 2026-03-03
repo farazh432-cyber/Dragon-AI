@@ -174,7 +174,7 @@ if prompt:
         ] + current_data["msgs"]
         
         try:
-            model = "llama-3.2-11b-vision-preview" if img_offer else "llama-3.3-70b-versatile"
+            model = "deepseek-v3" if img_offer else "llama-3.3-70b-versatile"
             completion = client.chat.completions.create(model=model, messages=context, stream=True)
             
             for chunk in completion:
@@ -191,3 +191,4 @@ if prompt:
             st.rerun()
         except Exception as e:
             st.error(f"Error: {e}")
+
