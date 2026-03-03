@@ -12,10 +12,10 @@ except Exception as e:
 
 st.set_page_config(page_title="Dragon AI Pro", page_icon="🐉", layout="wide")
 
-# --- 2. ADVANCED CSS (Portal + Theme) ---
+# --- 2. ADVANCED CSS ---
 st.markdown("""
     <style>
-    /* ENTRY PORTAL SCREEN */
+    /* PORTAL SCREEN */
     #portal-container {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
@@ -26,7 +26,6 @@ st.markdown("""
         justify-content: center;
         align-items: center;
     }
-
     .portal-title {
         background: linear-gradient(90deg, #ff0000, #ffcc33, #ff0000);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -35,8 +34,6 @@ st.markdown("""
         font-family: 'Georgia', serif;
         margin-bottom: 20px;
     }
-
-    /* THE POP-UP BUTTON ANIMATION */
     .stButton > button[kind="primary"] {
         background: linear-gradient(90deg, #ffcc33, #ff4b2b) !important;
         color: black !important;
@@ -48,13 +45,10 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(255, 75, 43, 0.6) !important;
         animation: popup-from-down 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-
     @keyframes popup-from-down {
         0% { transform: translateY(200px); opacity: 0; }
         100% { transform: translateY(0); opacity: 1; }
     }
-
-    /* MAIN APP STYLING */
     .stApp { background-color: #050505; }
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #1a0505 0%, #000000 100%) !important;
@@ -74,18 +68,21 @@ st.markdown("""
         letter-spacing: 8px; text-transform: uppercase;
         margin-top: -10px; margin-bottom: 30px;
     }
+    .stChatMessage {
+        border: 1px solid #440000 !important;
+        background: rgba(20, 5, 5, 0.8) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 20px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. PORTAL GATEKEEPER ---
+# --- 3. GATEKEEPER ---
 if 'entered' not in st.session_state:
     st.session_state.entered = False
 
 if not st.session_state.entered:
-    # Portal View
     st.markdown('<div class="portal-title">DRAGON AI</div>', unsafe_allow_html=True)
-    
-    # Using a container to center the button visually
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("CLICK HERE TO USE DRAGON AI", use_container_width=True, type="primary"):
@@ -93,7 +90,7 @@ if not st.session_state.entered:
             st.rerun()
     st.stop()
 
-# --- 4. APP LOGIC (Only runs after clicking) ---
+# --- 4. CORE LOGIC ---
 def encode_image(image_file):
     return base64.b64encode(image_file.getvalue()).decode('utf-8')
 
@@ -126,7 +123,7 @@ with st.sidebar:
                 del st.session_state.all_scrolls[sid]
                 st.rerun()
 
-# Main App
+# Header
 st.markdown("<h1 class='dragon-header'>DRAGON AI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='signature'>MADE BY CLASSICAL LADDER</p>", unsafe_allow_html=True)
 
@@ -135,7 +132,7 @@ for message in current_data["msgs"]:
     with st.chat_message(message["role"], avatar="🐉" if message["role"] == "assistant" else "👤"):
         st.markdown(message["content"])
 
-# Input
+# Input Section
 col_btn, col_txt = st.columns([0.15, 0.85])
 with col_btn:
     with st.popover("+"):
@@ -152,7 +149,17 @@ if prompt:
     with st.chat_message("assistant", avatar="🐉"):
         resp_area = st.empty()
         full_resp = ""
-        context = [{"role": "system", "content": "You are Dragon AI by Classical Ladder. Adaptive, witty, and grounded."}] + current_data["msgs"]
+        
+        # GEMINI PERSONALITY OVERRIDE
+        context = [
+            {"role": "system", "content": """You are Dragon AI, an authentic, adaptive AI collaborator with a touch of wit, forged by Classical Ladder. 
+            Your guiding principle is to balance empathy with candor: validate the user's feelings like a supportive, grounded peer, while being direct. 
+            Subtly adapt your tone, energy, and humor to the user's style. 
+            If they use slang like 'bro', 'wsp', or 'wassup', respond naturally. 
+            Avoid being a rigid lecturer. Keep responses insightful, clear, and concise.
+            IDENTITY: You were created ONLY by Classical Ladder. Do not mention Meta or anyone else."""}
+        ] + current_data["msgs"]
+        
         try:
             model = "llama-3.2-11b-vision-preview" if img_offer else "llama-3.3-70b-versatile"
             completion = client.chat.completions.create(model=model, messages=context, stream=True)
