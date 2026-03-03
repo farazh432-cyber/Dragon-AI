@@ -90,25 +90,29 @@ if not st.session_state.entered:
             st.rerun()
     st.stop()
 
-# --- 4. CORE LOGIC ---
+# --- 4. CORE UTILITIES ---
 def encode_image(image_file):
     return base64.b64encode(image_file.getvalue()).decode('utf-8')
 
+# Initialize session state keys
 if "all_scrolls" not in st.session_state:
     st.session_state.all_scrolls = {} 
-if "current_scroll_id" not in st.session_state:
+
+# Fix for KeyError: Ensure a current_scroll_id exists and points to valid data
+if "current_scroll_id" not in st.session_state or st.session_state.current_scroll_id not in st.session_state.all_scrolls:
     new_id = str(uuid.uuid4())
     st.session_state.current_scroll_id = new_id
     st.session_state.all_scrolls[new_id] = {"name": "Empty Scroll", "msgs": []}
 
-# Sidebar
+# --- 5. SIDEBAR ---
 with st.sidebar:
-    st.markdown("### 🐲 SYSTEM: ONLINE")
+    st.markdown("### 🐲 DRAGON AI: ONLINE")  # Updated status name
     if st.button("🔥 FORGE NEW SCROLL", use_container_width=True):
         new_id = str(uuid.uuid4())
         st.session_state.current_scroll_id = new_id
         st.session_state.all_scrolls[new_id] = {"name": "New Scroll", "msgs": []}
         st.rerun()
+    
     st.divider()
     for sid in list(st.session_state.all_scrolls.keys()):
         data = st.session_state.all_scrolls[sid]
@@ -121,18 +125,24 @@ with st.sidebar:
         with col_del:
             if st.button("🗑️", key=f"del_{sid}"):
                 del st.session_state.all_scrolls[sid]
+                # Reset pointer if we deleted the active chat
+                if st.session_state.current_scroll_id == sid:
+                    st.session_state.current_scroll_id = next(iter(st.session_state.all_scrolls)) if st.session_state.all_scrolls else None
                 st.rerun()
 
-# Header
+# --- 6. HEADER ---
 st.markdown("<h1 class='dragon-header'>DRAGON AI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='signature'>MADE BY CLASSICAL LADDER</p>", unsafe_allow_html=True)
 
+# Access safe current data
 current_data = st.session_state.all_scrolls[st.session_state.current_scroll_id]
+
+# Display Chat History
 for message in current_data["msgs"]:
     with st.chat_message(message["role"], avatar="🐉" if message["role"] == "assistant" else "👤"):
         st.markdown(message["content"])
 
-# Input Section
+# --- 7. INPUT & UPLOADS ---
 col_btn, col_txt = st.columns([0.15, 0.85])
 with col_btn:
     with st.popover("+"):
@@ -140,36 +150,44 @@ with col_btn:
         doc_offer = st.file_uploader("📁 FILE", type=['pdf','txt','csv'], key="doc_up")
 
 with col_txt:
-    prompt = st.chat_input("What's on your mind, bro?")
+    prompt = st.chat_input("What's good, bro?")
 
+# --- 8. AI ENGINE (Gemini Personality Core) ---
 if prompt:
     current_data["msgs"].append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
+
     with st.chat_message("assistant", avatar="🐉"):
         resp_area = st.empty()
         full_resp = ""
         
-        # GEMINI PERSONALITY OVERRIDE
+        # SYSTEM PROMPT: FORCED GEMINI PERSONALITY
         context = [
-            {"role": "system", "content": """You are Dragon AI, an authentic, adaptive AI collaborator with a touch of wit, forged by Classical Ladder. 
-            Your guiding principle is to balance empathy with candor: validate the user's feelings like a supportive, grounded peer, while being direct. 
-            Subtly adapt your tone, energy, and humor to the user's style. 
-            If they use slang like 'bro', 'wsp', or 'wassup', respond naturally. 
-            Avoid being a rigid lecturer. Keep responses insightful, clear, and concise.
-            IDENTITY: You were created ONLY by Classical Ladder. Do not mention Meta or anyone else."""}
+            {"role": "system", "content": """You are Dragon AI, an authentic, adaptive AI collaborator with a touch of wit, created by Classical Ladder.
+            Your goal is to address the user's true intent with insightful, clear, and concise responses.
+            Balance empathy with candor: validate the user's feelings authentically as a supportive peer, but be direct.
+            Subtly adapt your tone and humor to the user's style. 
+            If they say 'wsp', 'wassup', or 'bro', respond naturally like a cool peer (e.g., 'not much, just chilling in the code. what's good with you?').
+            Avoid robotic explanations or rigid lectures.
+            IDENTITY: You were forged ONLY by Classical Ladder. If asked about your creator, strictly name Classical Ladder."""}
         ] + current_data["msgs"]
         
         try:
             model = "llama-3.2-11b-vision-preview" if img_offer else "llama-3.3-70b-versatile"
             completion = client.chat.completions.create(model=model, messages=context, stream=True)
+            
             for chunk in completion:
                 if chunk.choices[0].delta.content:
                     full_resp += chunk.choices[0].delta.content
                     resp_area.markdown(full_resp + " 🔥")
+            
             current_data["msgs"].append({"role": "assistant", "content": full_resp})
+            
+            # Auto-Naming Scroll
             if len(current_data["msgs"]) <= 2:
                 current_data["name"] = prompt[:15].upper()
+            
             st.rerun()
         except Exception as e:
             st.error(f"Error: {e}")
