@@ -9,95 +9,133 @@ except Exception as e:
     st.error("Missing Key: Add GROQ_API_KEY to your Streamlit Secrets.")
     st.stop()
 
-st.set_page_config(page_title="Dragon AI", page_icon="🐉", layout="wide")
+st.set_page_config(page_title="Dragon AI Pro", page_icon="🐉", layout="wide")
 
-# --- 2. THE "NO-HOVER" UI STYLING ---
+# --- 2. THE ULTIMATE DRAGON THEME (CSS) ---
 st.markdown("""
     <style>
-    .stApp { background: #050505; }
-    .stMarkdown, p, span, label, div { color: #ffffff !important; }
+    /* Main Background: Deep Black Hole */
+    .stApp { background-color: #050505; }
     
-    /* Header */
+    /* SIDEBAR: Dragon Scales & Blood Red Gradient */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1a0505 0%, #050505 100%) !important;
+        border-right: 2px solid #ff4b2b !important;
+    }
+    
+    /* Sidebar Headers */
+    [data-testid="stSidebar"] h3 {
+        color: #ffcc33 !important;
+        text-shadow: 2px 2px #5a0000;
+        letter-spacing: 2px;
+    }
+
+    /* DRAGON HEADER */
     .dragon-header {
-        background: linear-gradient(90deg, #ff4b2b, #ffcc33);
+        background: linear-gradient(90deg, #ff0000, #ffcc33, #ff0000);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        font-weight: 800; font-size: 50px; text-align: center;
-        filter: drop-shadow(0 0 10px rgba(255, 75, 75, 0.4));
+        font-weight: 900; font-size: 65px; text-align: center;
+        filter: drop-shadow(0 0 15px rgba(255, 69, 0, 0.8));
+        margin-bottom: 0px;
+        font-family: 'Georgia', serif;
     }
     
     .top-credit {
-        text-align: center; color: #ffcc33; font-size: 12px;
-        letter-spacing: 5px; text-transform: uppercase; font-weight: bold;
+        text-align: center; color: #ffcc33; font-size: 14px;
+        letter-spacing: 6px; text-transform: uppercase; font-weight: bold;
+        opacity: 0.8;
     }
 
-    /* 🟡 ALWAYS VISIBLE GOLD "+" BUTTON */
+    /* CHAT BUBBLES: Dragon Scale Style */
+    .stChatMessage {
+        border: 1px solid #330000 !important;
+        border-radius: 15px !important;
+        background: rgba(40, 10, 10, 0.4) !important;
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+    }
+
+    /* ALWAYS VISIBLE GOLD "+" BUTTON */
     div[data-testid="stPopover"] > button {
-        background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%) !important;
+        background: radial-gradient(circle, #ffcc33 0%, #ff4b2b 100%) !important;
         color: #000000 !important;
         font-weight: 900 !important;
-        font-size: 26px !important;
+        font-size: 30px !important;
         border-radius: 50% !important;
-        width: 65px !important;
-        height: 65px !important;
-        border: 3px solid #ffffff !important;
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.5) !important;
+        width: 70px !important;
+        height: 70px !important;
+        border: 4px solid #ffffff !important;
+        box-shadow: 0 0 25px rgba(255, 75, 43, 0.7) !important;
         opacity: 1 !important;
-        visibility: visible !important;
     }
 
-    /* Sidebar Styling */
-    section[data-testid="stSidebar"] {
-        background-color: #111111 !important;
-        border-right: 1px solid #333;
+    /* Sidebar Buttons (Visible White & Gold) */
+    .stButton button {
+        background: #2a0505 !important;
+        color: #ffffff !important;
+        border: 1px solid #ff4b2b !important;
+        transition: 0.3s;
     }
-
-    /* Make File Uploader Icons & Text Always Visible */
-    .stFileUploader label { color: #ffcc33 !important; font-weight: bold !important; display: block !important; }
+    .stButton button:hover {
+        border: 1px solid #ffcc33 !important;
+        box-shadow: 0 0 10px #ff4b2b;
+    }
+    
+    /* Make Text Inputs White */
+    input { color: white !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. SESSION & HISTORY STORAGE ---
+# --- 3. SESSION LOGIC ---
 if "all_scrolls" not in st.session_state:
-    st.session_state.all_scrolls = {} # Stores {id: [messages]}
+    st.session_state.all_scrolls = {} 
 if "current_scroll_id" not in st.session_state:
     new_id = str(uuid.uuid4())
     st.session_state.current_scroll_id = new_id
     st.session_state.all_scrolls[new_id] = []
 
-# --- 4. SIDEBAR (CHATS LIST) ---
+# --- 4. SIDEBAR (DRAGON LAIR CONTROLS) ---
 with st.sidebar:
-    st.markdown("### 🐉 DRAGON CONTROLS")
+    st.markdown("### 🐲 DRAGON LAIR")
     
-    # NEW SCROLL BUTTON
-    if st.button("➕ START NEW SCROLL", use_container_width=True):
+    if st.button("🔥 FORGE NEW SCROLL", use_container_width=True):
         new_id = str(uuid.uuid4())
         st.session_state.current_scroll_id = new_id
         st.session_state.all_scrolls[new_id] = []
         st.rerun()
     
     st.divider()
-    st.markdown("### 📜 RECENT SCROLLS")
+    st.markdown("### 📜 ANCIENT RECORDS")
     
-    # List all chat sessions
+    # List all chat sessions with a delete option
     for sid in list(st.session_state.all_scrolls.keys()):
         msgs = st.session_state.all_scrolls[sid]
-        # Title is the first message or "New Scroll"
         title = msgs[0]["content"][:15] + "..." if msgs else "Empty Scroll"
         
-        # Highlight active scroll
-        btn_label = f"🔥 {title}" if sid == st.session_state.current_scroll_id else f"📜 {title}"
-        if st.button(btn_label, key=sid, use_container_width=True):
-            st.session_state.current_scroll_id = sid
-            st.rerun()
+        col_select, col_del = st.columns([0.8, 0.2])
+        with col_select:
+            # High-visibility labels
+            label = f"🔥 {title}" if sid == st.session_state.current_scroll_id else f"🌑 {title}"
+            if st.button(label, key=f"sel_{sid}", use_container_width=True):
+                st.session_state.current_scroll_id = sid
+                st.rerun()
+        with col_del:
+            if st.button("🗑️", key=f"del_{sid}"):
+                del st.session_state.all_scrolls[sid]
+                if st.session_state.current_scroll_id == sid:
+                    st.session_state.current_scroll_id = None
+                st.rerun()
 
-# --- 5. MAIN INTERFACE ---
+# --- 5. MAIN STAGE ---
 st.markdown("<p class='top-credit'>Powered by Classical_Ladder</p>", unsafe_allow_html=True)
 st.markdown("<h1 class='dragon-header'>DRAGON AI</h1>", unsafe_allow_html=True)
 
-# Get current messages
-current_msgs = st.session_state.all_scrolls[st.session_state.current_scroll_id]
+# Safety check for deleted current scroll
+if not st.session_state.current_scroll_id or st.session_state.current_scroll_id not in st.session_state.all_scrolls:
+    st.info("The Dragon awaits... Click 'Forge New Scroll' to begin.")
+    st.stop()
 
-# Display Messages
+# Display Current Messages
+current_msgs = st.session_state.all_scrolls[st.session_state.current_scroll_id]
 for message in current_msgs:
     with st.chat_message(message["role"], avatar="🐉" if message["role"] == "assistant" else "👤"):
         st.markdown(message["content"])
@@ -106,37 +144,31 @@ for message in current_msgs:
 col_btn, col_txt = st.columns([0.15, 0.85])
 
 with col_btn:
-    # THE GOLD "+" BUTTON
+    # THE BIG GOLDEN "+"
     with st.popover("+"):
-        st.markdown("### 📤 UPLOAD CENTER")
+        st.markdown("### 🏺 SACRIFICE DATA")
         
-        # Options are now fully visible inside the popover
         st.write("🖼️ **IMAGES**")
-        img = st.file_uploader("Upload Image", type=['png','jpg','jpeg'], key="img_up")
+        st.file_uploader("img", type=['png','jpg','jpeg'], key="img_up", label_visibility="collapsed")
         
         st.divider()
         
         st.write("📁 **FILES**")
-        doc = st.file_uploader("Upload Doc", type=['pdf','txt','csv'], key="doc_up")
-        
-        if img or doc:
-            st.success("Dragon Received!")
+        st.file_uploader("doc", type=['pdf','txt','csv'], key="doc_up", label_visibility="collapsed")
 
 with col_txt:
-    prompt = st.chat_input("Speak to the dragon...")
+    prompt = st.chat_input("Whisper to the beast...")
 
 # --- 7. CHAT PROCESSING ---
 if prompt:
-    # Save to current scroll
     current_msgs.append({"role": "user", "content": prompt})
-    
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar="🐉"):
         resp_area = st.empty()
         full_resp = ""
-        context = [{"role": "system", "content": "You are a wise dragon."}] + current_msgs
+        context = [{"role": "system", "content": "You are a wise legendary dragon. Speak with authority and ancient wisdom."}] + current_msgs
         
         try:
             completion = client.chat.completions.create(
@@ -152,4 +184,4 @@ if prompt:
             current_msgs.append({"role": "assistant", "content": full_resp})
             st.rerun()
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"The Dragon is sleeping: {e}")
