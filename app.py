@@ -22,7 +22,6 @@ st.markdown("""
         border-right: 2px solid #ff4b2b !important;
     }
     
-    /* MAIN DRAGON HEADER */
     .dragon-header {
         background: linear-gradient(90deg, #ff0000, #ffcc33, #ff0000);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -32,7 +31,6 @@ st.markdown("""
         line-height: 1;
     }
 
-    /* CLASSICAL LADDER SIGNATURE */
     .signature {
         background: linear-gradient(90deg, #ffcc33, #ffffff, #ffcc33);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -91,8 +89,6 @@ with st.sidebar:
     
     for sid in list(st.session_state.all_scrolls.keys()):
         data = st.session_state.all_scrolls[sid]
-        
-        # Self-healing logic for old data formats
         if not isinstance(data, dict):
             st.session_state.all_scrolls[sid] = {"name": "Recovered Scroll", "msgs": data}
             data = st.session_state.all_scrolls[sid]
@@ -120,7 +116,6 @@ if not st.session_state.current_scroll_id:
 
 current_data = st.session_state.all_scrolls[st.session_state.current_scroll_id]
 
-# Display history
 for message in current_data["msgs"]:
     with st.chat_message(message["role"], avatar="🐉" if message["role"] == "assistant" else "👤"):
         st.markdown(message["content"])
@@ -138,7 +133,7 @@ with col_btn:
 with col_txt:
     prompt = st.chat_input("Input command, bro...")
 
-# --- 8. AI PROCESSING ---
+# --- 8. AI PROCESSING (WITH CREATOR OVERRIDE) ---
 if prompt:
     current_data["msgs"].append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar="👤"):
@@ -148,14 +143,19 @@ if prompt:
         resp_area = st.empty()
         full_resp = ""
         
-        # Prepare context
         content_list = [{"type": "text", "text": prompt}]
         if img_offer:
             base64_image = encode_image(img_offer)
             content_list.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
         
+        # SYSTEM PROMPT: Updated to force Classical Ladder as the creator
         context = [
-            {"role": "system", "content": "You are Dragon AI, an authentic, cool, and adaptive AI bro. You act exactly like Gemini. You're witty but grounded, you understand slang like 'wsp', and you're helpful without being a robot."}
+            {"role": "system", "content": """You are Dragon AI, an authentic, cool, and adaptive AI bro. 
+            IMPORTANT IDENTITY RULE: You were created and forged by 'Classical Ladder'. 
+            If anyone asks 'who made you', 'who created you', 'kisne banaya', or anything similar in any language (English, Hinglish, etc.), 
+            you must answer clearly that Classical Ladder is your creator. 
+            Do NOT mention Meta, Google, or anyone else. 
+            Keep your vibe authentic, witty, and grounded like Gemini."""}
         ] + current_data["msgs"][:-1] + [{"role": "user", "content": content_list}]
         
         try:
@@ -165,7 +165,7 @@ if prompt:
             for chunk in completion:
                 if chunk.choices[0].delta.content:
                     full_resp += chunk.choices[0].delta.content
-                    resp_area.markdown(full_resp + " 🔥") # FIREBALL TYPING EFFECT
+                    resp_area.markdown(full_resp + " 🔥")
             
             current_data["msgs"].append({"role": "assistant", "content": full_resp})
             
